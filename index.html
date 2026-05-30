@@ -1102,6 +1102,7 @@ body.contact-mode .contact-container {
     let detailImgEls = [], detailScrollY = 0, detailTargetScrollY = 0;
     let isDetailAnimating = false, isIntroFinished = false;
     let aboutScrollY = 0, aboutTargetScrollY = 0;
+    let stackCenter; // 由 createElements 后赋值，这里声明供闭包访问
     const aboutScrollWrapper = document.getElementById('about-scroll-wrapper');
     const totalItems = projects.length;
     const loopHeight = totalItems * CONFIG.itemHeight;
@@ -1575,16 +1576,15 @@ if (giantWrapper) {
     preloadAllImages().then(() => {
     createElements();
     // 15张图片（5组3个项目），自然中心即为第8张
-    const stackCenter = Math.floor(imgEls.length / 2);
+    stackCenter = Math.floor(imgEls.length / 2);
     const mainTl = gsap.timeline();
     logoPaths.forEach(path => {
         const len = path.getTotalLength();
         gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
     });
 
-    // 放慢路径生长动画，等待图片就绪
-    mainTl.to(logoPaths, { strokeDashoffset: 0, duration: 2.2, stagger: 0.08 })
-          .to(logoPaths, { fill: "white", duration: 0.6 }, "-=0.4")
+    mainTl.to(logoPaths, { strokeDashoffset: 0, duration: 1.2, stagger: 0.05 })
+          .to(logoPaths, { fill: "white", duration: 0.5 }, "-=0.4")
           .to(imgEls, {
               opacity: 1, scale: 1,
               x: () => (Math.random() - 0.5) * 60,
