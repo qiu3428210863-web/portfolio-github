@@ -14,30 +14,48 @@
             --font-main: 'Inter', sans-serif;
         }
 
-        /* --- [加载进度条 — 粒子微光交互] --- */
+        /* --- [加载进度条 — Wave 动效] --- */
         #loading-overlay {
             position: fixed; inset: 0; z-index: 999999;
             background: #000;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; gap: 24px;
         }
-        #pixel-canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-            cursor: crosshair;
-            touch-action: none;
-        }
         #loading-overlay .loading-ui {
             position: relative;
-            z-index: 2;
+            z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 24px;
-            pointer-events: none;
+            gap: 20px;
             user-select: none;
+        }
+        .wave-bars {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            height: 24px;
+        }
+        .wave-bar {
+            width: 3px;
+            height: 4px;
+            background: #fff;
+            border-radius: 2px;
+            animation: waveAnim 1.0s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(1) { animation-delay: 0.00s; }
+        .wave-bar:nth-child(2) { animation-delay: 0.07s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.14s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.21s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.28s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.35s; }
+        .wave-bar:nth-child(7) { animation-delay: 0.42s; }
+        .wave-bar:nth-child(8) { animation-delay: 0.49s; }
+        .wave-bar:nth-child(9) { animation-delay: 0.56s; }
+        @keyframes waveAnim {
+            0%, 100% { height: 4px; }
+            30% { height: 20px; }
+            60% { height: 10px; }
         }
         .loading-track {
             width: 240px; height: 4px;
@@ -865,10 +883,20 @@ body.contact-mode .contact-container {
     </style>
 </head>
 <body>
-    <!-- 加载进度条（含粒子微光画布） -->
+    <!-- 加载进度条（Wave 动效） -->
     <div id="loading-overlay">
-        <canvas id="pixel-canvas"></canvas>
         <div class="loading-ui">
+            <div class="wave-bars">
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+            </div>
             <div class="loading-label">正在加载中...</div>
             <div class="loading-track"><div class="loading-bar" id="loading-bar"></div></div>
         </div>
@@ -1625,87 +1653,6 @@ if (giantWrapper) {
         listEls.forEach((el, i) => el.classList.toggle('active', (i % totalItems) === index));
     }
 
-    // ─── [粒子浮动 — 鼠标划过浮现微光] ───
-    const pCanvas = document.getElementById('pixel-canvas');
-    const pCtx = pCanvas.getContext('2d');
-    let pActive = true;
-    let pAnimId = null;
-    let pMouseX = -100, pMouseY = -100;
-    let pParticles = [];
-    const P_MAX = 100;
-
-    function resizeP() {
-        const dpr = window.devicePixelRatio || 1;
-        const w = pCanvas.offsetWidth;
-        const h = pCanvas.offsetHeight;
-        if (w === 0 || h === 0) return;
-        pCanvas.width = w * dpr;
-        pCanvas.height = h * dpr;
-        pCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function emitParticles(x, y) {
-        const count = 3 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < count; i++) {
-            if (pParticles.length >= P_MAX) { pParticles.shift(); }
-            pParticles.push({
-                x, y,
-                vx: (Math.random() - 0.5) * 1.2,
-                vy: -(Math.random() * 1.0 + 0.3),
-                life: 1,
-                decay: 0.008 + Math.random() * 0.012,
-                size: 0.5 + Math.random() * 1.5
-            });
-        }
-    }
-
-    let pLastEmit = { x: -100, y: -100 };
-    function pRender() {
-        if (!pActive) return;
-        const w = pCanvas.offsetWidth;
-        const h = pCanvas.offsetHeight;
-        pCtx.clearRect(0, 0, w, h);
-        // 生成粒子
-        const dist = Math.hypot(pMouseX - pLastEmit.x, pMouseY - pLastEmit.y);
-        if (dist > 5) {
-            emitParticles(pMouseX, pMouseY);
-            pLastEmit.x = pMouseX;
-            pLastEmit.y = pMouseY;
-        }
-        // 更新并绘制粒子
-        for (let i = pParticles.length - 1; i >= 0; i--) {
-            const p = pParticles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy -= 0.01;   // 微弱上升减速
-            p.life -= p.decay;
-            if (p.life <= 0) { pParticles.splice(i, 1); continue; }
-            pCtx.beginPath();
-            pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            pCtx.fillStyle = `rgba(255,255,255,${p.life * 0.7})`;
-            pCtx.fill();
-        }
-        pAnimId = requestAnimationFrame(pRender);
-    }
-
-    resizeP();
-    pRender();
-
-    pCanvas.addEventListener('mousemove', (e) => {
-        const rect = pCanvas.getBoundingClientRect();
-        pMouseX = e.clientX - rect.left;
-        pMouseY = e.clientY - rect.top;
-    });
-    pCanvas.addEventListener('mouseleave', () => { pMouseX = -100; pMouseY = -100; });
-    pCanvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const rect = pCanvas.getBoundingClientRect();
-        pMouseX = e.touches[0].clientX - rect.left;
-        pMouseY = e.touches[0].clientY - rect.top;
-    }, { passive: false });
-    pCanvas.addEventListener('touchend', () => { pMouseX = -100; pMouseY = -100; });
-    window.addEventListener('resize', resizeP);
-
     const loadingBar = document.getElementById('loading-bar');
     const loadingOverlay = document.getElementById('loading-overlay');
     // 加载条先长到 70%，等待预加载完成
@@ -1716,7 +1663,7 @@ if (giantWrapper) {
     gsap.to(loadingBar, { width: "100%", duration: 0.25, ease: "power2.out" });
     gsap.to(loadingOverlay, {
         opacity: 0, duration: 0.4, delay: 0.2, ease: "power2.inOut",
-        onComplete: () => { loadingOverlay.style.display = 'none'; pActive = false; if (pAnimId) cancelAnimationFrame(pAnimId); }
+        onComplete: () => { loadingOverlay.style.display = 'none'; }
     });
     createElements();
     // 15张图片（5组3个项目），自然中心即为第8张
