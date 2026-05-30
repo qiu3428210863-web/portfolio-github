@@ -14,6 +14,32 @@
             --font-main: 'Inter', sans-serif;
         }
 
+        /* --- [加载进度条] --- */
+        #loading-overlay {
+            position: fixed; inset: 0; z-index: 999999;
+            background: #000;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 24px;
+        }
+        .loading-track {
+            width: 240px; height: 2px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 2px; overflow: hidden;
+        }
+        .loading-bar {
+            height: 100%; width: 0%;
+            background: #fff;
+            border-radius: 2px;
+        }
+        .loading-label {
+            font-family: var(--font-main);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -821,6 +847,11 @@ body.contact-mode .contact-container {
     </style>
 </head>
 <body>
+    <!-- 加载进度条 -->
+    <div id="loading-overlay">
+        <div class="loading-label">加载中</div>
+        <div class="loading-track"><div class="loading-bar" id="loading-bar"></div></div>
+    </div>
     <!-- 黑色上滑转场色块 -->
     <div class="transition-slider" id="transition-slider"></div>
 </head>
@@ -1573,7 +1604,18 @@ if (giantWrapper) {
         listEls.forEach((el, i) => el.classList.toggle('active', (i % totalItems) === index));
     }
 
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    // 加载条先长到 70%，等待预加载完成
+    gsap.to(loadingBar, { width: "70%", duration: 1.8, ease: "power2.inOut" });
+
     preloadAllImages().then(() => {
+    // 预加载完成 → 填满 → 消失
+    gsap.to(loadingBar, { width: "100%", duration: 0.25, ease: "power2.out" });
+    gsap.to(loadingOverlay, {
+        opacity: 0, duration: 0.4, delay: 0.2, ease: "power2.inOut",
+        onComplete: () => { loadingOverlay.style.display = 'none'; }
+    });
     createElements();
     // 15张图片（5组3个项目），自然中心即为第8张
     stackCenter = Math.floor(imgEls.length / 2);
