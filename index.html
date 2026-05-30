@@ -14,12 +14,30 @@
             --font-main: 'Inter', sans-serif;
         }
 
-        /* --- [加载进度条] --- */
+        /* --- [加载进度条 — 像素涂鸦交互] --- */
         #loading-overlay {
             position: fixed; inset: 0; z-index: 999999;
             background: #000;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; gap: 24px;
+        }
+        #pixel-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        #loading-overlay .loading-ui {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            pointer-events: none;
+            user-select: none;
         }
         .loading-track {
             width: 240px; height: 4px;
@@ -847,10 +865,13 @@ body.contact-mode .contact-container {
     </style>
 </head>
 <body>
-    <!-- 加载进度条 -->
+    <!-- 加载进度条（含像素涂鸦画布） -->
     <div id="loading-overlay">
-        <div class="loading-label">加载中</div>
-        <div class="loading-track"><div class="loading-bar" id="loading-bar"></div></div>
+        <canvas id="pixel-canvas"></canvas>
+        <div class="loading-ui">
+            <div class="loading-label">正在加载中...</div>
+            <div class="loading-track"><div class="loading-bar" id="loading-bar"></div></div>
+        </div>
     </div>
     <!-- 黑色上滑转场色块 -->
     <div class="transition-slider" id="transition-slider"></div>
@@ -1603,6 +1624,97 @@ if (giantWrapper) {
         document.querySelector('.label-index').textContent = (index % 3 + 1).toString().padStart(2, '0');
         listEls.forEach((el, i) => el.classList.toggle('active', (i % totalItems) === index));
     }
+
+    // ─── [像素涂鸦画布] ───
+    const pixelCanvas = document.getElementById('pixel-canvas');
+    const pixelCtx = pixelCanvas.getContext('2d');
+    const PIXEL_SIZE = 20;
+    const COLOR_PALETTE = [
+        '#FF6B6B', '#FFE66D', '#4ECDC4', '#45B7D1',
+        '#FF8A5C', '#A78BFA', '#F472B6', '#34D399',
+        '#FBBF24', '#60A5FA', '#FB923C', '#E879F9',
+        '#22D3EE', '#A3E635', '#F87171', '#818CF8'
+    ];
+    let pixelGrid = {};
+    let isPixelDrawing = false;
+    let currentPixelColor = COLOR_PALETTE[0];
+    let pixelColorIndex = 0;
+
+    function resizePixelCanvas() {
+        pixelCanvas.width = pixelCanvas.offsetWidth * window.devicePixelRatio;
+        pixelCanvas.height = pixelCanvas.offsetHeight * window.devicePixelRatio;
+        pixelCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        drawPixelGrid();
+    }
+
+    function drawPixelGrid() {
+        const w = pixelCanvas.offsetWidth;
+        const h = pixelCanvas.offsetHeight;
+        pixelCtx.clearRect(0, 0, w, h);
+        // 绘制已放置的像素
+        pixelCtx.imageSmoothingEnabled = false;
+        for (const key in pixelGrid) {
+            const [gx, gy] = key.split(',').map(Number);
+            pixelCtx.fillStyle = pixelGrid[key];
+            pixelCtx.fillRect(gx * PIXEL_SIZE, gy * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        }
+        // 绘制极淡网格
+        pixelCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+        pixelCtx.lineWidth = 0.5;
+        for (let x = 0; x <= w; x += PIXEL_SIZE) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(x, 0);
+            pixelCtx.lineTo(x, h);
+            pixelCtx.stroke();
+        }
+        for (let y = 0; y <= h; y += PIXEL_SIZE) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(0, y);
+            pixelCtx.lineTo(w, y);
+            pixelCtx.stroke();
+        }
+    }
+
+    function paintPixel(e) {
+        const rect = pixelCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const gx = Math.floor(x / PIXEL_SIZE);
+        const gy = Math.floor(y / PIXEL_SIZE);
+        const key = `${gx},${gy}`;
+        if (!(key in pixelGrid)) {
+            pixelGrid[key] = currentPixelColor;
+            pixelCtx.fillStyle = currentPixelColor;
+            pixelCtx.fillRect(gx * PIXEL_SIZE, gy * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            // 点击时切换颜色
+            pixelColorIndex = (pixelColorIndex + 1) % COLOR_PALETTE.length;
+            currentPixelColor = COLOR_PALETTE[pixelColorIndex];
+        }
+    }
+
+    pixelCanvas.addEventListener('mousedown', (e) => {
+        isPixelDrawing = true;
+        paintPixel(e);
+    });
+    pixelCanvas.addEventListener('mousemove', (e) => {
+        if (isPixelDrawing) paintPixel(e);
+    });
+    window.addEventListener('mouseup', () => { isPixelDrawing = false; });
+    pixelCanvas.addEventListener('mouseleave', () => { isPixelDrawing = false; });
+    // 触屏支持
+    pixelCanvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isPixelDrawing = true;
+        paintPixel(e.touches[0]);
+    }, { passive: false });
+    pixelCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (isPixelDrawing) paintPixel(e.touches[0]);
+    }, { passive: false });
+    pixelCanvas.addEventListener('touchend', () => { isPixelDrawing = false; });
+
+    resizePixelCanvas();
+    window.addEventListener('resize', resizePixelCanvas);
 
     const loadingBar = document.getElementById('loading-bar');
     const loadingOverlay = document.getElementById('loading-overlay');
