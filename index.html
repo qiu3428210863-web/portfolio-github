@@ -14,7 +14,7 @@
             --font-main: 'Inter', sans-serif;
         }
 
-        /* --- [加载进度条 — 墨迹线条交互] --- */
+        /* --- [加载进度条 — 粒子微光交互] --- */
         #loading-overlay {
             position: fixed; inset: 0; z-index: 999999;
             background: #000;
@@ -865,7 +865,7 @@ body.contact-mode .contact-container {
     </style>
 </head>
 <body>
-    <!-- 加载进度条（含墨迹线条画布） -->
+    <!-- 加载进度条（含粒子微光画布） -->
     <div id="loading-overlay">
         <canvas id="pixel-canvas"></canvas>
         <div class="loading-ui">
@@ -1625,74 +1625,86 @@ if (giantWrapper) {
         listEls.forEach((el, i) => el.classList.toggle('active', (i % totalItems) === index));
     }
 
-    // ─── [墨迹线条画布 — 白线拖尾] ───
-    const inkCanvas = document.getElementById('pixel-canvas');
-    const inkCtx = inkCanvas.getContext('2d');
-    let inkDrawing = false;
-    let inkPrevX = 0, inkPrevY = 0;
-    let inkActive = true;
-    let inkAnimId = null;
+    // ─── [粒子浮动 — 鼠标划过浮现微光] ───
+    const pCanvas = document.getElementById('pixel-canvas');
+    const pCtx = pCanvas.getContext('2d');
+    let pActive = true;
+    let pAnimId = null;
+    let pMouseX = -100, pMouseY = -100;
+    let pParticles = [];
+    const P_MAX = 100;
 
-    function resizeInkCanvas() {
+    function resizeP() {
         const dpr = window.devicePixelRatio || 1;
-        const w = inkCanvas.offsetWidth;
-        const h = inkCanvas.offsetHeight;
+        const w = pCanvas.offsetWidth;
+        const h = pCanvas.offsetHeight;
         if (w === 0 || h === 0) return;
-        inkCanvas.width = w * dpr;
-        inkCanvas.height = h * dpr;
-        inkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        inkCtx.lineCap = 'round';
-        inkCtx.lineJoin = 'round';
-        inkCtx.strokeStyle = 'rgba(255,255,255,0.85)';
-        inkCtx.lineWidth = 1.5;
+        pCanvas.width = w * dpr;
+        pCanvas.height = h * dpr;
+        pCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    // 逐帧淡出循环 — 模拟墨水在宣纸上缓慢晕开消散
-    function inkFadeLoop() {
-        if (!inkActive) return;
-        inkCtx.fillStyle = 'rgba(0,0,0,0.025)';
-        inkCtx.fillRect(0, 0, inkCanvas.offsetWidth, inkCanvas.offsetHeight);
-        inkAnimId = requestAnimationFrame(inkFadeLoop);
+    function emitParticles(x, y) {
+        const count = 3 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+            if (pParticles.length >= P_MAX) { pParticles.shift(); }
+            pParticles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: -(Math.random() * 1.0 + 0.3),
+                life: 1,
+                decay: 0.008 + Math.random() * 0.012,
+                size: 0.5 + Math.random() * 1.5
+            });
+        }
     }
 
-    function inkStart(e) {
-        inkDrawing = true;
-        const rect = inkCanvas.getBoundingClientRect();
-        inkPrevX = e.clientX - rect.left;
-        inkPrevY = e.clientY - rect.top;
-        // 落笔点一个微小的墨点
-        inkCtx.beginPath();
-        inkCtx.arc(inkPrevX, inkPrevY, 0.8, 0, Math.PI * 2);
-        inkCtx.fillStyle = 'rgba(255,255,255,0.9)';
-        inkCtx.fill();
+    let pLastEmit = { x: -100, y: -100 };
+    function pRender() {
+        if (!pActive) return;
+        const w = pCanvas.offsetWidth;
+        const h = pCanvas.offsetHeight;
+        pCtx.clearRect(0, 0, w, h);
+        // 生成粒子
+        const dist = Math.hypot(pMouseX - pLastEmit.x, pMouseY - pLastEmit.y);
+        if (dist > 5) {
+            emitParticles(pMouseX, pMouseY);
+            pLastEmit.x = pMouseX;
+            pLastEmit.y = pMouseY;
+        }
+        // 更新并绘制粒子
+        for (let i = pParticles.length - 1; i >= 0; i--) {
+            const p = pParticles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy -= 0.01;   // 微弱上升减速
+            p.life -= p.decay;
+            if (p.life <= 0) { pParticles.splice(i, 1); continue; }
+            pCtx.beginPath();
+            pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            pCtx.fillStyle = `rgba(255,255,255,${p.life * 0.7})`;
+            pCtx.fill();
+        }
+        pAnimId = requestAnimationFrame(pRender);
     }
 
-    function inkMove(e) {
-        if (!inkDrawing) return;
-        const rect = inkCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        inkCtx.beginPath();
-        inkCtx.moveTo(inkPrevX, inkPrevY);
-        inkCtx.lineTo(x, y);
-        inkCtx.stroke();
-        inkPrevX = x;
-        inkPrevY = y;
-    }
+    resizeP();
+    pRender();
 
-    function inkStop() { inkDrawing = false; }
-
-    resizeInkCanvas();
-    inkFadeLoop();
-
-    inkCanvas.addEventListener('mousedown', inkStart);
-    inkCanvas.addEventListener('mousemove', inkMove);
-    inkCanvas.addEventListener('mouseup', inkStop);
-    inkCanvas.addEventListener('mouseleave', inkStop);
-    inkCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); inkStart(e.touches[0]); }, { passive: false });
-    inkCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); inkMove(e.touches[0]); }, { passive: false });
-    inkCanvas.addEventListener('touchend', inkStop);
-    window.addEventListener('resize', resizeInkCanvas);
+    pCanvas.addEventListener('mousemove', (e) => {
+        const rect = pCanvas.getBoundingClientRect();
+        pMouseX = e.clientX - rect.left;
+        pMouseY = e.clientY - rect.top;
+    });
+    pCanvas.addEventListener('mouseleave', () => { pMouseX = -100; pMouseY = -100; });
+    pCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const rect = pCanvas.getBoundingClientRect();
+        pMouseX = e.touches[0].clientX - rect.left;
+        pMouseY = e.touches[0].clientY - rect.top;
+    }, { passive: false });
+    pCanvas.addEventListener('touchend', () => { pMouseX = -100; pMouseY = -100; });
+    window.addEventListener('resize', resizeP);
 
     const loadingBar = document.getElementById('loading-bar');
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -1704,7 +1716,7 @@ if (giantWrapper) {
     gsap.to(loadingBar, { width: "100%", duration: 0.25, ease: "power2.out" });
     gsap.to(loadingOverlay, {
         opacity: 0, duration: 0.4, delay: 0.2, ease: "power2.inOut",
-        onComplete: () => { loadingOverlay.style.display = 'none'; inkActive = false; if (inkAnimId) cancelAnimationFrame(inkAnimId); }
+        onComplete: () => { loadingOverlay.style.display = 'none'; pActive = false; if (pAnimId) cancelAnimationFrame(pAnimId); }
     });
     createElements();
     // 15张图片（5组3个项目），自然中心即为第8张
