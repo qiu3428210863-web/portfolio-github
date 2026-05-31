@@ -1786,11 +1786,14 @@ function enterAboutView() {
         document.body.classList.add('about-mode');
         if (document.body.classList.contains('contact-mode')) exitContactView();
         if (document.body.classList.contains('detail-mode')) exitDetailView();
-        
+
         // 隐藏主页 Work 元素，但保持背景 Logo 显示（设置透明度为 0.03）
         gsap.set([".images-wrap", ".sidebar-left", ".sidebar-right", ".center-labels", projectTitleCenter, projectKeywords, ".svg-stage"], { opacity: 0 });
         gsap.set("#bg-logo-large", { opacity: 0.03 });
         gsap.set("body", { backgroundColor: "#ffffff" });
+
+        // 【修复】立即将 About 内容设为 from 动画的起始态，消除 t=0.5~0.7 之间的闪现窗口
+        gsap.set(".about-left > p, .polaroid-frame, .info-item", { opacity: 0, y: 40 });
     }, 0.5);
 
     // 3. 色块继续向上滑动消失
