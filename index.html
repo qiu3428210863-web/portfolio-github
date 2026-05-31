@@ -1794,8 +1794,8 @@ function enterAboutView() {
         gsap.set("#bg-logo-large", { opacity: 0.03 });
         gsap.set("body", { backgroundColor: "#ffffff" });
 
-        // 【修复】立即将 About 内容设为不可见，消除 t=0.5~0.7 之间的闪现窗口
-        gsap.set(".about-left > p, .polaroid-frame, .info-item", { opacity: 0, y: 40 });
+        // 【修复】将整个 About 滚动容器设为不可见，彻底消除所有内容的同时闪现
+        gsap.set(aboutScrollWrapper, { opacity: 0 });
     }, 0.5);
 
     // 3. 色块继续向上滑动消失
@@ -1810,7 +1810,9 @@ function enterAboutView() {
          }
      }, 0.8);
 
-    // 4. About 内容浮现（用 to 而非 from：起始态已在 t=0.5 由 gsap.set 预设）
+    // 4. 先淡入整个 About 滚动容器
+    tl.to(aboutScrollWrapper, { opacity: 1, duration: 0.3 }, 0.7);
+    // 5. 再交错淡入内容元素
     tl.to(".about-left > p, .polaroid-frame, .info-item", {
         y: 0,
         opacity: 1,
@@ -1910,9 +1912,10 @@ function enterAboutView() {
                  document.body.classList.remove('contact-mode');
                  gsap.set(contactContainer, { visibility: "hidden" });
 
-                 // 开启 About 状态
+                 // 开启 About 状态，同时立即隐藏所有内容防闪现
                  document.body.classList.add('about-mode');
-                 
+                 gsap.set(aboutScrollWrapper, { opacity: 0 });
+
                  // 此时 Work 界面本身就是隐藏的（opacity 0），所以不需要额外操作
                  // 确保背景色变回白色（About 页的底色）
                  gsap.set("body", { backgroundColor: "#ffffff" });
@@ -1928,10 +1931,12 @@ function enterAboutView() {
                  }
              });
 
-             // 4. 触发 About 内容的浮现动画
-             bridgeTl.from(".about-left > *, .about-right > *", {
-                 y: 40,
-                 opacity: 0,
+             // 4. 先淡入整个 About 滚动容器
+             bridgeTl.to(aboutScrollWrapper, { opacity: 1, duration: 0.3 }, "-=0.5");
+             // 5. 再触发 About 内容的浮现动画
+             bridgeTl.to(".about-left > p, .polaroid-frame, .info-item", {
+                 y: 0,
+                 opacity: 1,
                  duration: 0.8,
                  stagger: 0.08,
                  ease: "power2.out"
