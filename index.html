@@ -1349,17 +1349,18 @@ body.contact-mode .contact-container {
         }, 0.8);
     }
 
-    function exitDetailView() {
-        if (isDetailAnimating) return;
+    function exitDetailView(onComplete) {
+        if (isDetailAnimating) { if (onComplete) onComplete(); return; }
         isDetailAnimating = true;
         // 停止视频背景
         const detailVideoBg = document.getElementById('detail-video-bg');
         detailVideoBg.classList.remove('active');
         detailVideoBg.querySelector('video').pause();
         document.body.classList.remove('detail-mode');
-        const exitTl = gsap.timeline({ onComplete: () => { 
-            isDetailAnimating = false; 
+        const exitTl = gsap.timeline({ onComplete: () => {
+            isDetailAnimating = false;
             detailImagesContainer.innerHTML = ''; // 清空详情页图片
+            if (onComplete) onComplete();
         } });
         
         const btnTarget = globalBackBtn.querySelector('.typewriter-target');
@@ -1792,7 +1793,7 @@ function enterAboutView() {
         gsap.set("#bg-logo-large", { opacity: 0.03 });
         gsap.set("body", { backgroundColor: "#ffffff" });
 
-        // 【修复】立即将 About 内容设为 from 动画的起始态，消除 t=0.5~0.7 之间的闪现窗口
+        // 【修复】立即将 About 内容设为不可见，消除 t=0.5~0.7 之间的闪现窗口
         gsap.set(".about-left > p, .polaroid-frame, .info-item", { opacity: 0, y: 40 });
     }, 0.5);
 
@@ -1808,10 +1809,10 @@ function enterAboutView() {
          }
      }, 0.8);
 
-    // 4. About 内容浮现
-    tl.from(".about-left > p, .polaroid-frame, .info-item", {
-        y: 40,
-        opacity: 0,
+    // 4. About 内容浮现（用 to 而非 from：起始态已在 t=0.5 由 gsap.set 预设）
+    tl.to(".about-left > p, .polaroid-frame, .info-item", {
+        y: 0,
+        opacity: 1,
         duration: 0.8,
         stagger: 0.08,
         ease: "power2.out"
@@ -1880,12 +1881,11 @@ function enterAboutView() {
     }
 
     navAbout.addEventListener('click', () => {
-         if (isDetailAnimating) return; 
+         if (isDetailAnimating) return;
          if (document.body.classList.contains('about-mode')) return;
-         
+
          if (document.body.classList.contains('detail-mode')) {
-             exitDetailView();
-             enterAboutView();
+             exitDetailView(() => enterAboutView());
          } else if (document.body.classList.contains('contact-mode')) {
              // --- 修复：Contact 到 About 的直接转场 ---
              isDetailAnimating = true;
@@ -1955,10 +1955,9 @@ function enterAboutView() {
      navContact.addEventListener('click', () => {
           if (isDetailAnimating) return;
           if (document.body.classList.contains('contact-mode')) return;
-  
+
           if (document.body.classList.contains('detail-mode')) {
-              exitDetailView();
-              enterContactView();
+              exitDetailView(() => enterContactView());
           } else if (document.body.classList.contains('about-mode')) {
               // 按照用户要求：从 About 跳转到 Contact 时，不出现黑色滑块转场
               // 使用 exitAboutView 的 noSlider = true 模式
