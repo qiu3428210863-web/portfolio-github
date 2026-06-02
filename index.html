@@ -415,6 +415,135 @@
             z-index: 2;
         }
 
+        /* --- [详情页视频浮窗样式] --- */
+        .detail-video-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 200000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .detail-video-overlay.active {
+            display: flex;
+        }
+        .video-modal {
+            position: relative;
+            width: 80%;
+            max-width: 1000px;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .video-modal video {
+            width: 100%;
+            display: block;
+            cursor: pointer;
+        }
+        .video-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            background: #1a1a1a;
+        }
+        .video-controls .play-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .video-controls .play-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .video-progress-wrap {
+            flex: 1;
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .video-progress-track {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        .video-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+        .video-progress-thumb {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.15s;
+            pointer-events: none;
+        }
+        .video-progress-wrap:hover .video-progress-thumb {
+            opacity: 1;
+        }
+        .video-progress-wrap:hover .video-progress-track {
+            height: 6px;
+        }
+        .video-time {
+            color: #999;
+            font-size: 0.8rem;
+            font-family: var(--font-main);
+            min-width: 100px;
+            text-align: right;
+            flex-shrink: 0;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .video-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10;
+            line-height: 1;
+        }
+        .video-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        #detailAITVCBtn {
+            display: none;
+        }
+
         /* --- [Contact Page Styles] --- */
         /* --- 修改后的 Contact Container --- */
 .contact-container {
@@ -990,6 +1119,10 @@ body.contact-mode .contact-container {
                     点击查看原型图演示
                     <span class="arrow">→</span>
                 </a>
+                <button class="detail-btn" id="detailAITVCBtn">
+                    观看AI TVC视频
+                    <span class="arrow">→</span>
+                </button>
             </div>
         </div>
 
@@ -1096,6 +1229,24 @@ body.contact-mode .contact-container {
         <span class="tooltip-label" id="tooltip-label"></span>
         <span class="tooltip-value" id="tooltip-value"></span>
         <span class="tooltip-copied" id="tooltip-copied">已复制</span>
+    </div>
+
+    <!-- 视频浮窗 -->
+    <div class="detail-video-overlay" id="videoOverlay">
+        <div class="video-modal">
+            <button class="video-close-btn" id="videoCloseBtn">✕</button>
+            <video id="overlayVideo" playsinline></video>
+            <div class="video-controls">
+                <button class="play-btn" id="videoPlayBtn">▶</button>
+                <div class="video-progress-wrap" id="videoProgressWrap">
+                    <div class="video-progress-track">
+                        <div class="video-progress-fill" id="videoProgressFill"></div>
+                    </div>
+                    <div class="video-progress-thumb" id="videoProgressThumb"></div>
+                </div>
+                <span class="video-time" id="videoTime">0:00 / 0:00</span>
+            </div>
+        </div>
     </div>
 
     <button id="global-back-btn"><span class="typewriter-target"></span></button>
@@ -1345,6 +1496,7 @@ body.contact-mode .contact-container {
             // Update neumorphic buttons
             const projectBtn = document.getElementById('detailProjectBtn');
             const prototypeBtn = document.getElementById('detailPrototypeBtn');
+            const aiTvcBtn = document.getElementById('detailAITVCBtn');
             if (proj.projectUrl) {
                 projectBtn.href = proj.projectUrl;
                 projectBtn.style.display = 'inline-flex';
@@ -1356,6 +1508,12 @@ body.contact-mode .contact-container {
                 prototypeBtn.style.display = 'inline-flex';
             } else {
                 prototypeBtn.style.display = 'none';
+            }
+            // 仅在QCY项目显示"观看AI TVC视频"按钮
+            if (proj.name.includes('QCY')) {
+                aiTvcBtn.style.display = 'inline-flex';
+            } else {
+                aiTvcBtn.style.display = 'none';
             }
         }, 0.8);
     }
@@ -2097,6 +2255,119 @@ function enterAboutView() {
     exitContactView = function(onComplete) {
         hideTooltip();
         origExitContactView.call(this, onComplete);
+    };
+
+    /* --- [视频浮窗控制] --- */
+    const videoOverlay = document.getElementById('videoOverlay');
+    const overlayVideo = document.getElementById('overlayVideo');
+    const videoPlayBtn = document.getElementById('videoPlayBtn');
+    const videoProgressFill = document.getElementById('videoProgressFill');
+    const videoProgressThumb = document.getElementById('videoProgressThumb');
+    const videoProgressWrap = document.getElementById('videoProgressWrap');
+    const videoTime = document.getElementById('videoTime');
+    const videoCloseBtn = document.getElementById('videoCloseBtn');
+
+    function formatTime(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return m + ':' + (s < 10 ? '0' + s : s);
+    }
+
+    function updateVideoProgress() {
+        const pct = overlayVideo.duration ? (overlayVideo.currentTime / overlayVideo.duration) * 100 : 0;
+        videoProgressFill.style.width = pct + '%';
+        videoProgressThumb.style.left = pct + '%';
+        videoTime.textContent = formatTime(overlayVideo.currentTime) + ' / ' + formatTime(overlayVideo.duration);
+    }
+
+    function closeVideoOverlay() {
+        overlayVideo.pause();
+        overlayVideo.src = '';
+        videoOverlay.classList.remove('active');
+        videoPlayBtn.textContent = '▶';
+        videoProgressFill.style.width = '0%';
+        videoProgressThumb.style.left = '0%';
+        videoTime.textContent = '0:00 / 0:00';
+    }
+
+    // 打开浮窗
+    document.getElementById('detailAITVCBtn').addEventListener('click', function() {
+        overlayVideo.src = 'assets/qcy-tvc/AI%20TVC.mp4';
+        overlayVideo.load();
+        overlayVideo.play().catch(function(){});
+        videoPlayBtn.textContent = '⏸';
+        videoOverlay.classList.add('active');
+    });
+
+    // 关闭浮窗（×按钮）
+    videoCloseBtn.addEventListener('click', closeVideoOverlay);
+
+    // 关闭浮窗（点击背景）
+    videoOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeVideoOverlay();
+    });
+
+    // 播放/暂停
+    videoPlayBtn.addEventListener('click', function() {
+        if (!overlayVideo.src) return;
+        if (overlayVideo.paused) {
+            overlayVideo.play().catch(function(){});
+            videoPlayBtn.textContent = '⏸';
+        } else {
+            overlayVideo.pause();
+            videoPlayBtn.textContent = '▶';
+        }
+    });
+
+    // 点击视频切换播放/暂停
+    overlayVideo.addEventListener('click', function() {
+        if (overlayVideo.paused) {
+            overlayVideo.play().catch(function(){});
+            videoPlayBtn.textContent = '⏸';
+        } else {
+            overlayVideo.pause();
+            videoPlayBtn.textContent = '▶';
+        }
+    });
+
+    // 进度条更新
+    overlayVideo.addEventListener('timeupdate', updateVideoProgress);
+
+    // 进度条拖动控制
+    let isSeeking = false;
+    videoProgressWrap.addEventListener('mousedown', function(e) {
+        if (!overlayVideo.duration) return;
+        isSeeking = true;
+        seekFromEvent(e);
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isSeeking) return;
+        seekFromEvent(e);
+    });
+    document.addEventListener('mouseup', function() {
+        isSeeking = false;
+    });
+
+    function seekFromEvent(e) {
+        const rect = videoProgressWrap.getBoundingClientRect();
+        let pct = (e.clientX - rect.left) / rect.width;
+        pct = Math.max(0, Math.min(1, pct));
+        overlayVideo.currentTime = pct * overlayVideo.duration;
+        videoProgressFill.style.width = (pct * 100) + '%';
+        videoProgressThumb.style.left = (pct * 100) + '%';
+    }
+
+    // 视频结束
+    overlayVideo.addEventListener('ended', function() {
+        videoPlayBtn.textContent = '▶';
+    });
+
+    // 离开详情页时关闭浮窗
+    const origExitDetailView = exitDetailView;
+    exitDetailView = function(onComplete) {
+        if (videoOverlay.classList.contains('active')) closeVideoOverlay();
+        origExitDetailView.call(this, onComplete);
     };
     </script>
 </body>
