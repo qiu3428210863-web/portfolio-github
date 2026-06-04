@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Homemade+Apple&display=swap">
+    <script src="assets/js/gsap.min.js"></script>
     <style>
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400 700;
+            font-display: swap;
+            src: url('assets/fonts/inter-latin.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Homemade Apple';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('assets/fonts/homemade-apple-latin.woff2') format('woff2');
+        }
         :root {
             --bg-color: #000000;
             --text-color: #000000;
@@ -56,6 +69,10 @@
             0%, 100% { height: 4px; }
             30% { height: 20px; }
             60% { height: 10px; }
+        }
+        @keyframes imgShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
         .loading-track {
             width: 240px; height: 4px;
@@ -119,7 +136,7 @@
             overflow: hidden;
             height: auto;
             min-height: 2rem;
-            margin-top: clamp(2px, 0.4vh, 5px);
+            margin-top: clamp(2px, 0.2vh, 5px);
         }
 
         .header-right {
@@ -211,7 +228,15 @@
         .svg-stage { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 1100; }
         .logo-container { position: absolute; width: min(150px, 12vw); overflow: visible; pointer-events: none; }
         .logo-path { fill: rgba(255, 255, 255, 0); stroke: var(--bracket-color); stroke-width: 1; pointer-events: none; }
-        .image-container { position: absolute; width: min(320px, 22vw); height: min(200px, 14vw); opacity: 0; overflow: hidden; background-color: #111; cursor: pointer; pointer-events: auto; }
+        .image-container {
+            position: absolute;
+            width: min(320px, 22vw); height: min(200px, 14vw);
+            opacity: 0; overflow: hidden;
+            background: linear-gradient(90deg, #181818 25%, #2a2a2a 50%, #181818 75%);
+            background-size: 200% 100%;
+            animation: imgShimmer 1.8s ease-in-out infinite;
+            cursor: pointer; pointer-events: auto;
+        }
         .image-container img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); pointer-events: none; transition: filter 0.7s cubic-bezier(0.23, 1, 0.32, 1); }
         .image-container:hover img { filter: grayscale(0%); }
         
@@ -267,6 +292,19 @@
             transition: opacity 0.6s ease 1.2s;
         }
         body.detail-mode .detail-buttons {
+            opacity: 1;
+        }
+        .detail-hint {
+            font-size: clamp(0.6rem, 0.7vw, 0.7rem);
+            color: #999;
+            font-weight: 500;
+            margin-top: clamp(8px, 1.2vh, 14px);
+            opacity: 0;
+            transition: opacity 0.6s ease 1.4s;
+            line-height: 1.4;
+            letter-spacing: 0.3px;
+        }
+        body.detail-mode .detail-hint {
             opacity: 1;
         }
         .detail-btn {
@@ -375,7 +413,9 @@
             width: min(450px, 40vw);
             height: min(600px, 55vh);
             overflow: hidden;
-            background-color: #eee;
+            background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
+            background-size: 200% 100%;
+            animation: imgShimmer 1.8s ease-in-out infinite;
             box-shadow: 0 20px 50px rgba(0,0,0,0.1);
             will-change: transform;
             pointer-events: auto;
@@ -869,7 +909,9 @@ body.contact-mode .contact-container {
         .polaroid-image {
             width: 100%;
             aspect-ratio: 1 / 1;
-            background-color: #f0f0f0;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f8f8f8 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: imgShimmer 1.8s ease-in-out infinite;
             overflow: hidden;
             position: relative;
         }
@@ -952,7 +994,6 @@ body.contact-mode .contact-container {
     letter-spacing: -1vw;
     font-weight: 900;
     white-space: nowrap;
-    transform: translateX(0%) translateY(clamp(20px, 5vh, 50px))
 }
 
 .giant-en {
@@ -960,9 +1001,8 @@ body.contact-mode .contact-container {
     font-weight: 700;
     color: #999;
     letter-spacing: 0.8vw;
-    margin-top: clamp(8px, 1.5vh, 20px);
+    margin-top: clamp(1em, 5vw,10em);
     text-transform: uppercase;
-    transform: translateX(0%) translateY(clamp(-160px, -20vh, -260px))
 }
 
 /* --- [Contact 复制弹窗] --- */
@@ -1127,6 +1167,7 @@ body.contact-mode .contact-container {
                     观看AI TVC视频
                     <span class="arrow">→</span>
                 </button>
+                <div class="detail-hint">Figma / 原型图 / AI TVC 视频等外部资源可能需一点加载时间，请耐心等待</div>
             </div>
         </div>
 
@@ -1277,7 +1318,7 @@ body.contact-mode .contact-container {
 
     const baseProjects = [
             { 
-                name: "屋弄品牌落地页设计案例",
+                name: "屋弄品牌落地页优化",
                 category: "UX DESIGN",
                 tags: "家居品牌, 落地页, 用户体验",
                 description: "本次项目为品牌落地页UI更新\n总计耗时8周，我负责了整体的UI设计和用户体验优化\n此次落地页更新，让用户在极简的操作路径中和交互，建立落地页家居感氛围，以此提高用户的浏览和转化意愿",
